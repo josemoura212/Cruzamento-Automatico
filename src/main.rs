@@ -53,7 +53,7 @@ fn simula_carros(via_carro1: char, acel_carro1: f64, via_carro2: char, acel_carr
     let comprimento1 = CARRO_COMPRIMENTO; // metros
     let mut pos_atual1: f64 = -80.0; // metros do cruzamento
     let mut vel_atual1: f64 = 0.0; // metros por segundo
-    let acel_atual1: f64; // metros por segundo ao quadrado
+     // metros por segundo ao quadrado
 
     // Descrição do carro 2
     let chassi2: i32 = 2222; // identificação de um carro
@@ -64,10 +64,10 @@ fn simula_carros(via_carro1: char, acel_carro1: f64, via_carro2: char, acel_carr
     let comprimento2: f64 = CARRO_COMPRIMENTO; // metros
     let mut pos_atual2: f64 = -100.0; // metros do cruzamento
     let mut vel_atual2: f64 = 0.0; // metros por segundo
-    let acel_atual2: f64; // metros por segundo ao quadrado
+     // metros por segundo ao quadrado
 
-    acel_atual1 = acel_carro1;
-    acel_atual2 = acel_carro2;
+    let acel_atual1: f64 = acel_carro1;
+    let acel_atual2: f64 = acel_carro2;
 
     println!("Início da simulação");
     let mut tickms: f64; // tempo que passou em cada tick, milisegundos
@@ -85,7 +85,7 @@ fn simula_carros(via_carro1: char, acel_carro1: f64, via_carro2: char, acel_carr
         pos_atual1 = pos_atual1
             + vel_atual1 * (tickms / 1000.0)
             + acel_atual1 * (tickms / 1000.0) * (tickms / 1000.0) / 2.0;
-        vel_atual1 = vel_atual1 + acel_atual1 * (tickms / 1000.0);
+        vel_atual1 += acel_atual1 * (tickms / 1000.0);
 
         // Restrições carro 1
         if pos_atual1 < old_position {
@@ -114,7 +114,7 @@ fn simula_carros(via_carro1: char, acel_carro1: f64, via_carro2: char, acel_carr
         pos_atual2 = pos_atual2
             + vel_atual2 * (tickms / 1000.0)
             + acel_atual2 * (tickms / 1000.0) * (tickms / 1000.0) / 2.0;
-        vel_atual2 = vel_atual2 + acel_atual2 * (tickms / 1000.0);
+        vel_atual2 += acel_atual2 * (tickms / 1000.0);
 
         // Restrições carro 2
         if pos_atual2 < old_position {
@@ -137,29 +137,21 @@ fn simula_carros(via_carro1: char, acel_carro1: f64, via_carro2: char, acel_carr
         );
 
         // Detecta colisão na via H
-        if via1 == 'H' && via2 == 'H' {
-            if colisao_longitudinal(pos_atual1, comprimento1, pos_atual2) {
-                println!("Colisão na via H");
-                return true;
-            }
+        if via1 == 'H' && via2 == 'H' && colisao_longitudinal(pos_atual1, comprimento1, pos_atual2) {
+            println!("Colisão na via H");
+            return true;
         }
 
         // Detecta colisão na via V
-        if via1 == 'V' && via2 == 'V' {
-            if colisao_longitudinal(pos_atual1, comprimento1, pos_atual2) {
-                println!("Colisão na via V");
-                return true;
-            }
+        if via1 == 'V' && via2 == 'V' && colisao_longitudinal(pos_atual1, comprimento1, pos_atual2) {
+            println!("Colisão na via V");
+            return true;
         }
 
         // Detecta colisão no cruzamento
-        if via1 != via2 {
-            if dentro_cruzamento(pos_atual1, comprimento1, via1)
-                && dentro_cruzamento(pos_atual2, comprimento2, via2)
-            {
-                println!("Colisão dentro do cruzamento");
-                return true;
-            }
+        if via1 != via2 && dentro_cruzamento(pos_atual1, comprimento1, via1) && dentro_cruzamento(pos_atual2, comprimento2, via2) {
+            println!("Colisão dentro do cruzamento");
+            return true;
         }
 
         // Verifica se carro 1 saiu do sistema (falta a margem)
@@ -187,24 +179,24 @@ fn simula_carros(via_carro1: char, acel_carro1: f64, via_carro2: char, acel_carr
         }
     }
 
-    return false;
+    false
 }
 
 // Colisão de dois carros ao longo da mesma via
 fn colisao_longitudinal(posicao_frente: f64, comprimento: f64, posicao_atras: f64) -> bool {
-    return posicao_frente - comprimento <= posicao_atras;
+    posicao_frente - comprimento <= posicao_atras
 }
 
 // Detecta carro dentro do cruzamento
 fn dentro_cruzamento(posicao: f64, comprimento: f64, via: char) -> bool {
-    return posicao > 0.0
+    posicao > 0.0
         && posicao
             <= comprimento
                 + if via == 'H' {
                     VIAV_LARGURA
                 } else {
                     VIAH_LARGURA
-                };
+                }
 }
 
 fn main() {
