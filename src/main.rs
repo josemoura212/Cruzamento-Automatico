@@ -1,5 +1,7 @@
+use core::panic;
 use std::thread::sleep;
 use std::time::Duration;
+use std::env;
 
 /* Geometria do cruzamento
 
@@ -45,7 +47,7 @@ const ACELERACAO_MINIMA: f64 = -10.0;
 // Retorna se houve colisão ou não
 fn simula_carros(via_carro1: char, acel_carro1: f64, via_carro2: char, acel_carro2: f64) -> bool {
     // Descrição do carro 1
-    let chassi1: i32 = 1111; // identificação de um carro
+    let mut placa1  = String::from("ABC1234"); // identificação de um carro
     let via1: char = via_carro1; // via deste carro
     let _acel_max1 = ACELERACAO_MAXIMA; // metros por segundo ao quadrado
     let _acel_min1 = ACELERACAO_MINIMA; // metros por segundo ao quadrado
@@ -56,7 +58,7 @@ fn simula_carros(via_carro1: char, acel_carro1: f64, via_carro2: char, acel_carr
      // metros por segundo ao quadrado
 
     // Descrição do carro 2
-    let chassi2: i32 = 2222; // identificação de um carro
+    let mut placa2 = String::from("xyz9876"); // identificação de um carro
     let via2: char = via_carro2; // via deste carro
     let _acel_max2 = ACELERACAO_MAXIMA; // metros por segundo ao quadrado
     let _acel_min2 = ACELERACAO_MINIMA; // metros por segundo ao quadrado
@@ -65,6 +67,17 @@ fn simula_carros(via_carro1: char, acel_carro1: f64, via_carro2: char, acel_carr
     let mut pos_atual2: f64 = -100.0; // metros do cruzamento
     let mut vel_atual2: f64 = 0.0; // metros por segundo
      // metros por segundo ao quadrado
+
+    // Verifica a validade das palcas
+    placa1 = placa1.to_uppercase();
+    placa2 = placa2.to_uppercase();
+
+    if !valida_placa(&placa1){
+        panic!("     Placa invalida:{}",placa1);
+    }
+    if !valida_placa(&placa2){
+        panic!("     Placa invalida:{}",placa2);
+    }
 
     let acel_atual1: f64 = acel_carro1;
     let acel_atual2: f64 = acel_carro2;
@@ -104,7 +117,7 @@ fn simula_carros(via_carro1: char, acel_carro1: f64, via_carro2: char, acel_carr
 
         println!(
             "Carro1 {} na posição {}{}, velocidade {}, aceleração {}",
-            chassi1, via1, pos_atual1, vel_atual1, acel_atual1
+            placa1, via1, pos_atual1, vel_atual1, acel_atual1
         );
 
         // Atualiza o carro 2
@@ -133,7 +146,7 @@ fn simula_carros(via_carro1: char, acel_carro1: f64, via_carro2: char, acel_carr
 
         println!(
             "Carro2 {} na posição {}{}, velocidade {}, aceleração {}",
-            chassi2, via2, pos_atual2, vel_atual2, acel_atual2
+            placa2, via2, pos_atual2, vel_atual2, acel_atual2
         );
 
         // Detecta colisão na via H
@@ -199,7 +212,42 @@ fn dentro_cruzamento(posicao: f64, comprimento: f64, via: char) -> bool {
                 }
 }
 
+// Valida formato de um placa
+fn valida_placa(placa:&str)-> bool{
+
+    // Só aceita caracteres ASCII
+    if !placa.is_ascii(){
+        return false;
+    }
+
+    // Só aceita placa velha
+    if placa.len() != 7{
+        println!("Placa não tem o tamanho certo");
+        return false;
+    }
+
+    let inicio = &placa[..3];
+    let fim = &placa[3..];
+
+    for x in inicio.chars(){
+        if !x.is_alphabetic(){
+            println!("Placa não tem letras no início");
+            return false;
+        }
+    }
+
+    for x in fim.chars(){
+        if !x.is_ascii_digit(){
+            println!("Placa não tem dígitos no fim");
+            return false;
+        }
+    }
+
+    true
+}
+
 fn main() {
+    env::set_var("RUST_BACKTRACE", "1");
     println!("Inicio do programa");
     simula_carros('H', ACELERACAO_MAXIMA / 10.0, 'H', ACELERACAO_MAXIMA);
 
