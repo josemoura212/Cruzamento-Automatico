@@ -1,3 +1,7 @@
+use crate::comunicacao::{Comunicacao, MensagemDeVeiculo, MensagemDoControlador};
+
+use super::Via;
+
 pub const _CARRO_LARGURA: f64 = 2.0; //metros
 pub const CARRO_COMPRIMENTO: f64 = 4.0; //metros
 
@@ -13,19 +17,17 @@ pub const ACELERACAO_MAXIMA: f64 = 3.0;
 // Aceleração mínima de qualquer veículo em metros por segundo ao quadrado
 pub const ACELERACAO_MINIMA: f64 = -10.0;
 
-use super::Via;
-
 // Descrição de um carro
 pub struct Carro {
     pub placa: String,    // placa deste carro
-    via: Via,             // via deste carro
-    acel_max: f64,        // metros por segundo ao quadrado
-    acel_min: f64,        // metros por segundo ao quadrado
-    vel_max: f64,         // metros por segundo
+    pub via: Via,         // via deste carro
+    pub acel_max: f64,    // metros por segundo ao quadrado
+    pub acel_min: f64,    // metros por segundo ao quadrado
+    pub vel_max: f64,     // metros por segundo
     pub comprimento: f64, // metros
     pub pos_atual: f64,   // metros do cruzamento
     pub vel_atual: f64,   // metros por segundo
-    acel_atual: f64,      // metros por segundo ao quadrado
+    pub acel_atual: f64,  // metros por segundo ao quadrado
 }
 
 impl Carro {
@@ -94,7 +96,7 @@ impl Carro {
     }
 
     // Avança o estado de um carro por tickms milissegundos
-    pub fn tick(&mut self, tickms: f64) {
+    pub fn tick(&mut self, tickms: f64, comunicacao: &mut Comunicacao) {
         //self.mostra();
 
         let pos_anterior = self.pos_atual;
@@ -120,6 +122,27 @@ impl Carro {
             self.vel_atual = self.vel_max; // Trava na velocidade máxima
         }
 
-        //self.mostra();
+        // Processa as mensagens recebidas por este carro
+        loop {
+            match comunicacao.receive_por_veiculo(&self.placa) {
+                None => break,
+                Some(msg) => match msg {
+                    MensagemDoControlador::SetAcel { placa, acel } => {
+                        self.acel_atual = acel;
+                    }
+
+                    MensagemDoControlador::PedeSituacao { placa } => {
+                        println!("#veiculo @{} informa sua situacao", &self.placa);
+                        let msg = MensagemDeVeiculo::SituacaoAtual {
+                            placa: placa,
+                            pos_atual: self.pos_atual,
+                            vel_atual: self.vel_atual,
+                            acel_atual: self.acel_atual,
+                        };
+                        comunicacao.send_por_veiculo(msg);
+                    }
+                },
+            }
+        }
     }
 }

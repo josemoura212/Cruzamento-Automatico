@@ -20,8 +20,11 @@
 
 */
 
-mod veiculos;
+use crate::comunicacao::Comunicacao;
+use crate::comunicacao::MensagemDeVeiculo;
+use crate::comunicacao::MensagemDoControlador;
 
+mod veiculos;
 use veiculos::Carro;
 
 const _VIAH_MARGEM: f64 = 15.0; //metros
@@ -32,8 +35,6 @@ const VIAV_LARGURA: f64 = 4.0; //metros
 
 const VIAH_PERIMETRO: f64 = 150.0; //metros
 const VIAV_PERIMETRO: f64 = 150.0; //metros
-
-const VIA_MAXIMO_CARROS: usize = 4; // Número máximo de carros criados por via
 
 // Cruzamento entre duas vias
 // 'enum' tem semântica 'move', mas 'Via' é barato e facilita poder clonar o valor às vezes
@@ -153,7 +154,7 @@ impl Transito {
     }
 
     // Chega um novo carro no transito
-    pub fn chega_carro(&mut self, via: Via) -> bool {
+    pub fn chega_carro(&mut self, via: Via, comunicacao: &mut Comunicacao) -> bool {
         let vel = self.define_velocidade_chegada(&via);
         let acel: f64;
 
@@ -165,10 +166,19 @@ impl Transito {
         nova_placa.push_str(&format!("{:04}", self.carros_criados));
         self.carros_criados += 1;
 
-        let novo_carro = Carro::new(nova_placa, via.clone(), 0.0);
+        let novo_carro = Carro::new(nova_placa.clone(), via.clone(), 0.0);
 
-        match via {
-            // Posso usar aqui pois foi usado um clone antes
+        comunicacao.send_por_veiculo(MensagemDeVeiculo::Chegada {
+            placa: nova_placa,
+            via: via.clone(),
+            acel_max: novo_carro.acel_max,
+            acel_min: novo_carro.acel_min,
+            vel_max: novo_carro.vel_max,
+            comprimento: novo_carro.comprimento,
+        });
+
+        match via.clone() {
+            // Posso usar aqui pois foram usados clones antes
             Via::ViaH => {
                 self.carros_via_h.push(novo_carro);
             }
@@ -181,17 +191,17 @@ impl Transito {
     }
 
     // Avança o estado de todos os carros por tickms milissegundos
-    pub fn tick(&mut self, tickms: f64) {
+    pub fn tick(&mut self, tickms: f64, comunicacao: &mut Comunicacao) {
         println!("transito.tick");
 
         // Atualiza todos os carros da via H
         for carro in &mut self.carros_via_h {
-            carro.tick(tickms);
+            carro.tick(tickms, comunicacao);
         }
 
         // Atualiza todos os carros da via V
         for carro in &mut self.carros_via_v {
-            carro.tick(tickms);
+            carro.tick(tickms, comunicacao);
         }
 
         // Carro mais antigo na via H saiu do sistema ?
@@ -199,7 +209,7 @@ impl Transito {
         // https://doc.rust-lang.org/std/collections/struct.VecDeque.html#
         if self.carros_via_h.len() > 0 {
             let mais_antigo_h = self.carros_via_h.get(0).unwrap();
-            if mais_antigo_h.pos_atual > 0.0 + mais_antigo_h.comprimento + VIAV_LARGURA {
+            if mais_antigo_h.pos_atual > mais_antigo_h.comprimento + VIAV_LARGURA {
                 println!("@{} saiu da via H", mais_antigo_h.placa);
                 self.carros_via_h.remove(0);
             }
@@ -210,7 +220,7 @@ impl Transito {
         // https://doc.rust-lang.org/std/collections/struct.VecDeque.html#
         if self.carros_via_v.len() > 0 {
             let mais_antigo_v = self.carros_via_v.get(0).unwrap();
-            if mais_antigo_v.pos_atual > 0.0 + mais_antigo_v.comprimento + VIAH_LARGURA {
+            if mais_antigo_v.pos_atual > mais_antigo_v.comprimento + VIAH_LARGURA {
                 println!("@{} saiu da via V", mais_antigo_v.placa);
                 self.carros_via_v.remove(0);
             }
