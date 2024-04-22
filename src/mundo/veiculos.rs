@@ -1,8 +1,8 @@
-const _CARRO_LARGURA: f64 = 2.0; //metros
-const CARRO_COMPRIMENTO: f64 = 4.0; //metros
+pub const _CARRO_LARGURA: f64 = 2.0; //metros
+pub const CARRO_COMPRIMENTO: f64 = 4.0; //metros
 
 // Velocidade de cruzeiro de qualquer veículo em metros por segundo
-const VELOCIDADE_CRUZEIRO: f64 = 80.0 * (1000.0 / 3600.0);
+pub const VELOCIDADE_CRUZEIRO: f64 = 80.0 * (1000.0 / 3600.0);
 
 // Velocidade máxima de qualquer veículo em metros por segundo
 pub const VELOCIDADE_MAXIMA: f64 = 200.0 * (1000.0 / 3600.0);
@@ -24,7 +24,7 @@ pub struct Carro {
     vel_max: f64,         // metros por segundo
     pub comprimento: f64, // metros
     pub pos_atual: f64,   // metros do cruzamento
-    vel_atual: f64,       // metros por segundo
+    pub vel_atual: f64,   // metros por segundo
     acel_atual: f64,      // metros por segundo ao quadrado
 }
 
@@ -88,7 +88,7 @@ impl Carro {
     // Mostra o estado de um carro na tela
     pub fn mostra(&self) {
         println!(
-            "@{} na posição {:?}{}, velocidade {}, aceleração {}",
+            "   @{} na posição {:?} {:.3}, velocidade {:.2}, aceleração {:.2}",
             self.placa, self.via, self.pos_atual, self.vel_atual, self.acel_atual
         );
     }
