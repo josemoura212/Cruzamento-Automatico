@@ -20,7 +20,7 @@
 
 */
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 use crate::transito::Via;
 
@@ -48,10 +48,17 @@ pub enum MensagemDoControlador {
     PedeSituacao { placa: String },       // Pede a situação
 }
 
-// Sistema de comunicação entre veículos e controlador
+/*
+    Controlador pode mandar várias mensagens para o mesmo carro
+    Comunicação precisa de vet para enfileirar as mensagens para um mesmo carro
+    Preciso de um hashmap de vets de MensagemDoControlador
+    Usar VecDeque pois é mais eficiente para nosso cenário
+*/
+
+// Sistema de comunicação entre veículos e controlador !!!
 pub struct Comunicacao {
     mensagens_de_veiculo: Vec<MensagemDeVeiculo>,
-    mensagens_do_controlador: HashMap<String, MensagemDoControlador>,
+    mensagens_do_controlador: HashMap<String, VecDeque<MensagemDoControlador>>,
 }
 
 impl Comunicacao {
@@ -59,7 +66,7 @@ impl Comunicacao {
     pub fn new() -> Self {
         Self {
             mensagens_de_veiculo: Vec::new(),
-            mensagens_do_controlador: HashMap::new(),
+            mensagens_do_controlador: HashMap::new(), // !!!
         }
     }
 
@@ -68,14 +75,21 @@ impl Comunicacao {
         self.mensagens_de_veiculo.push(msg);
     }
 
-    // Permite um veículo receber uma mensagem vinda do controlador
-    pub fn receive_por_veiculo(&mut self, placa: &String) -> Option<MensagemDoControlador> {
-        self.mensagens_do_controlador.remove(placa)
+    // Permite o controlador enviar mensagens !!!
+    pub fn send_por_controlador(&mut self, placa: String, msg: MensagemDoControlador) {
+        let lista = self
+            .mensagens_do_controlador
+            .entry(placa)
+            .or_insert(VecDeque::new());
+        lista.push_back(msg);
     }
 
-    // Permite o controlador enviar mensagens
-    pub fn send_por_controlador(&mut self, placa: String, msg: MensagemDoControlador) {
-        self.mensagens_do_controlador.insert(placa, msg);
+    // Permite um veículo receber uma mensagem vinda do controlador !!!
+    pub fn receive_por_veiculo(&mut self, placa: &String) -> Option<MensagemDoControlador> {
+        match self.mensagens_do_controlador.get_mut(placa) {
+            None => None,
+            Some(x) => x.pop_front(),
+        }
     }
 
     // Permite ao controlador receber uma mensagem vinda de veículo

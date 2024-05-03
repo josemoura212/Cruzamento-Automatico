@@ -126,22 +126,26 @@ impl Carro {
         loop {
             match comunicacao.receive_por_veiculo(&self.placa) {
                 None => break,
-                Some(msg) => match msg {
-                    MensagemDoControlador::SetAcel { placa, acel } => {
-                        self.acel_atual = acel;
-                    }
+                Some(msg) => {
+                    match msg {
+                        MensagemDoControlador::SetAcel { placa, acel } => {
+                            assert!(&placa == &self.placa); // !!!
+                            println!("#veiculo @{} recebe acel {}", placa, acel);
+                            self.acel_atual = acel
+                        }
 
-                    MensagemDoControlador::PedeSituacao { placa } => {
-                        println!("#veiculo @{} informa sua situacao", &self.placa);
-                        let msg = MensagemDeVeiculo::SituacaoAtual {
-                            placa: placa,
-                            pos_atual: self.pos_atual,
-                            vel_atual: self.vel_atual,
-                            acel_atual: self.acel_atual,
-                        };
-                        comunicacao.send_por_veiculo(msg);
+                        MensagemDoControlador::PedeSituacao { placa } => {
+                            println!("#veiculo @{} informa sua situacao", &self.placa);
+                            let msg = MensagemDeVeiculo::SituacaoAtual {
+                                placa: placa,
+                                pos_atual: self.pos_atual,
+                                vel_atual: self.vel_atual,
+                                acel_atual: self.acel_atual,
+                            };
+                            comunicacao.send_por_veiculo(msg);
+                        }
                     }
-                },
+                }
             }
         }
     }

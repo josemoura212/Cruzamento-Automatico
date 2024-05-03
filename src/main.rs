@@ -1,34 +1,4 @@
-/* 	Projeto do Cruzamento Automático - versão s8
-
-
-crate root  (main.rs)		<<<<<<<<<<<<<<<<<<<<<<<<<-----
- │			main(), ...
- │
- ├── transito
- │		│	struct Transito, ...
- │		│
- │   	├── veiculos
- │				struct Carro, ...
- │
- ├── controlador
- |
- └── comunicacao
-
-
-
-Arquitetura do sistema:
-
-        veiculos  <--> comunicacao  <-->  controlador
-
-        Tipos de mensagens enviadas por veículos para o controlador
-            Chegada			// Veículo informa que chegou
-            SituacaoAtual	// Veículo informa a sua situação
-
-        Tipos de mensagens enviadas pelo controlador para veículos
-            PedeSituacao	// Controlador pede a situação do veículo
-            SetAcel			// Controlador determina a nova aceleração do veículo
-
-
+/* 	Projeto do Cruzamento Automático - versão s9
 
 */
 
@@ -69,7 +39,6 @@ use comunicacao::Comunicacao;
 */
 
 // Simula transito até os carros saírem do perímetro ou colidirem
-// Retorna se houve colisão ou não
 fn simula_mundo() {
     const TICKMS: f64 = 100.0; // Passo da simulação, em ms
     const TEMPO_ENTRE_CHEGADAS: f64 = 3000.0; // Tempo entre chegadas de carros, em ms
@@ -81,11 +50,15 @@ fn simula_mundo() {
     // Cria uma descrição de trânsito
     let mut transito = Transito::new();
 
-    // Cria o primeiro carro da via H
-    transito.chega_carro(Via::ViaH, &mut comunicacao);
+    // Cria o primeiro carro da via H	!!!
+    if let Err(msg) = transito.chega_carro(Via::ViaH, &mut comunicacao) {
+        println!("Falha em chegar o primeiro carro na via H: {}", msg);
+    }
 
-    // Cria o primeiro carro da via V
-    transito.chega_carro(Via::ViaV, &mut comunicacao);
+    // Cria o primeiro carro da via V	!!!
+    if let Err(msg) = transito.chega_carro(Via::ViaV, &mut comunicacao) {
+        println!("Falha em chegar o primeiro carro na via V: {}", msg);
+    }
 
     // Tempo até a próxima chegada de um carro
     let mut tempo_ateh_proxima_chegada = TEMPO_ENTRE_CHEGADAS;
@@ -110,12 +83,17 @@ fn simula_mundo() {
 
         // Aborta a simulação se ocorreu colisão
         match transito.ocorreu_colisao() {
-            Some(m) => panic!("Ocorreu colisao: {}", m),
+            //Some(m) => panic!( "Ocorreu colisao: {}", m),		!!!
+            Some(m) => {
+                println!("Ocorreu colisao: {}", m);
+                return;
+            }
             None => {}
         }
 
         // Verifica se tem algum carro no sistema
         if transito.vazio() {
+            println!("Nenhum carro no perímetro");
             break;
         }
 
@@ -123,14 +101,19 @@ fn simula_mundo() {
         tempo_ateh_proxima_chegada -= TICKMS;
 
         if tempo_ateh_proxima_chegada <= 0.0 {
-            assert!(
-                transito.chega_carro(Via::ViaH, &mut comunicacao),
-                "Falha em chegar um carro via H"
-            );
-            assert!(
-                transito.chega_carro(Via::ViaV, &mut comunicacao),
-                "Falha em chegar um carro via V"
-            );
+            //assert!( transito.chega_carro( Via::ViaH, &mut comunicacao), "Falha em chegar um carro via H"); !!!
+            //assert!( transito.chega_carro( Via::ViaV, &mut comunicacao), "Falha em chegar um carro via V"); !!!
+
+            match transito.chega_carro(Via::ViaH, &mut comunicacao) {
+                Ok(_) => (),
+                Err(msg) => println!("Falha em chegar um carro via H: {}", msg),
+            }
+
+            match transito.chega_carro(Via::ViaV, &mut comunicacao) {
+                Ok(_) => (),
+                Err(msg) => println!("Falha em chegar um carro via V: {}", msg),
+            }
+
             tempo_ateh_proxima_chegada += TEMPO_ENTRE_CHEGADAS;
         }
 
@@ -138,7 +121,7 @@ fn simula_mundo() {
         tempo_ateh_proximo_controle -= TICKMS;
 
         if tempo_ateh_proximo_controle <= 0.0 {
-            controlador.controle(&mut comunicacao);
+            controlador.controle(TEMPO_ENTRE_CONTROLES, &mut comunicacao);
             tempo_ateh_proximo_controle += TEMPO_ENTRE_CONTROLES;
         }
     }
