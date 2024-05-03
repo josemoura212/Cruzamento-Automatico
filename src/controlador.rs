@@ -255,7 +255,6 @@ impl Semaforo {
 }
 
 // Descreve a situação de um veículo em particular
-#[allow(unused)]
 struct Situacao {
     placa: String,      // placa deste carro
     via: Via,           // via deste carro
