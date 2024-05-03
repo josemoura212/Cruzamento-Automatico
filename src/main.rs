@@ -1,7 +1,3 @@
-/* 	Projeto do Cruzamento Automático - versão s9
-
-*/
-
 use std::thread::sleep;
 use std::time::Duration;
 
