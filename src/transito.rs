@@ -20,8 +20,7 @@
 
 */
 
-use crate::comunicacao::Comunicacao;
-use crate::comunicacao::MensagemDeVeiculo;
+use crate::comunicacao::{Comunicacao, MensagemDeVeiculo};
 
 mod veiculos;
 use veiculos::Carro;
@@ -36,8 +35,10 @@ const VIAH_PERIMETRO: f64 = 150.0; //metros
 const VIAV_PERIMETRO: f64 = 150.0; //metros
 
 // Cruzamento entre duas vias
-// 'enum' tem semântica 'move', mas 'Via' é barato e facilita poder clonar o valor às vezes
-#[derive(Debug, Clone, PartialEq)]
+// 'enum' tem semântica 'move', mas 'Via' é barato para fazer copy	!!!
+// Copy requer Clone
+// PartialEq para fazer '=='
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Via {
     ViaH,
     ViaV,
@@ -153,7 +154,6 @@ impl Transito {
     }
 
     // Chega um novo carro no transito
-    //pub fn chega_carro( &mut self, via:Via, comunicacao:&mut Comunicacao) -> bool { !!!
     pub fn chega_carro(&mut self, via: Via, comunicacao: &mut Comunicacao) -> Result<(), String> {
         let vel = self.define_velocidade_chegada(&via);
 
@@ -165,19 +165,19 @@ impl Transito {
         nova_placa.push_str(&format!("{:04}", self.carros_criados));
         self.carros_criados += 1;
 
-        let novo_carro = Carro::new(nova_placa.clone(), via.clone(), 0.0);
+        let novo_carro = Carro::new(nova_placa.clone(), via, 0.0); // 'via' não precisa clone()	!!!
 
         comunicacao.send_por_veiculo(MensagemDeVeiculo::Chegada {
             placa: nova_placa,
-            via: via.clone(),
+            via: via, // 'via' não precisa clone()	!!!
             acel_max: novo_carro.acel_max,
             acel_min: novo_carro.acel_min,
             vel_max: novo_carro.vel_max,
             comprimento: novo_carro.comprimento,
         });
 
-        match via.clone() {
-            // Posso usar aqui pois foram usados clones antes
+        match via {
+            // 'via' não precisa clone()	!!!
             Via::ViaH => {
                 self.carros_via_h.push(novo_carro);
             }

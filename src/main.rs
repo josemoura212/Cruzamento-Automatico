@@ -8,7 +8,7 @@ mod transito;
 use transito::Transito;
 use transito::Via;
 
-use controlador::Controlador;
+use controlador::{Controle, TipoControlador};
 
 use comunicacao::Comunicacao;
 
@@ -46,21 +46,24 @@ fn simula_mundo() {
     // Cria uma descrição de trânsito
     let mut transito = Transito::new();
 
-    // Cria o primeiro carro da via H	!!!
-    if let Err(msg) = transito.chega_carro(Via::ViaH, &mut comunicacao) {
-        println!("Falha em chegar o primeiro carro na via H: {}", msg);
-    }
+    // Cria o primeiro carro da via H
+    match transito.chega_carro(Via::ViaH, &mut comunicacao) {
+        Ok(_) => (),
+        Err(msg) => println!("Via H: {}", msg),
+    };
 
-    // Cria o primeiro carro da via V	!!!
-    if let Err(msg) = transito.chega_carro(Via::ViaV, &mut comunicacao) {
-        println!("Falha em chegar o primeiro carro na via V: {}", msg);
-    }
+    // Cria o primeiro carro da via V
+    match transito.chega_carro(Via::ViaV, &mut comunicacao) {
+        Ok(_) => (),
+        Err(msg) => println!("Via V: {}", msg),
+    };
 
     // Tempo até a próxima chegada de um carro
     let mut tempo_ateh_proxima_chegada = TEMPO_ENTRE_CHEGADAS;
 
-    // Cria uma descrição de controlador
-    let mut controlador = Controlador::new();
+    // Cria uma estrutura de controle	!!!
+    let mut controle = Controle::new(TipoControlador::SEMAFORO);
+    //	let mut controle = Controle::new(TipoControlador::FAZNADA);
 
     // Tempo até a próxima ação de controle
     let mut tempo_ateh_proximo_controle = TEMPO_ENTRE_CONTROLES;
@@ -79,7 +82,6 @@ fn simula_mundo() {
 
         // Aborta a simulação se ocorreu colisão
         match transito.ocorreu_colisao() {
-            //Some(m) => panic!( "Ocorreu colisao: {}", m),		!!!
             Some(m) => {
                 println!("Ocorreu colisao: {}", m);
                 return;
@@ -97,9 +99,6 @@ fn simula_mundo() {
         tempo_ateh_proxima_chegada -= TICKMS;
 
         if tempo_ateh_proxima_chegada <= 0.0 {
-            //assert!( transito.chega_carro( Via::ViaH, &mut comunicacao), "Falha em chegar um carro via H"); !!!
-            //assert!( transito.chega_carro( Via::ViaV, &mut comunicacao), "Falha em chegar um carro via V"); !!!
-
             match transito.chega_carro(Via::ViaH, &mut comunicacao) {
                 Ok(_) => (),
                 Err(msg) => println!("Falha em chegar um carro via H: {}", msg),
@@ -117,7 +116,7 @@ fn simula_mundo() {
         tempo_ateh_proximo_controle -= TICKMS;
 
         if tempo_ateh_proximo_controle <= 0.0 {
-            controlador.controle(TEMPO_ENTRE_CONTROLES, &mut comunicacao);
+            controle.acao_controle(TEMPO_ENTRE_CONTROLES, &mut comunicacao);
             tempo_ateh_proximo_controle += TEMPO_ENTRE_CONTROLES;
         }
     }
