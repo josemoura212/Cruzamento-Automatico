@@ -16,7 +16,6 @@ pub struct Semaforo {
     via_vermelho: Via, // qual via esta vermelho
 
     amarelo: bool, // Se amarelo está ligado
-
     display_tudo: bool,
 }
 
@@ -208,10 +207,13 @@ impl Controlador for Semaforo {
                     let delta_v = afrente_vel - veiculo.vel_atual;
                     if delta_v > 0.0 {
                         veiculo.acel_desejada = veiculo.acel_max;
-                    } else if dist <= espacamento {
-                        veiculo.acel_desejada = veiculo.acel_min;
                     } else {
-                        veiculo.acel_desejada = -delta_v * delta_v / (2.0 * (dist - afrente_comp));
+                        if dist <= espacamento {
+                            veiculo.acel_desejada = veiculo.acel_min;
+                        } else {
+                            veiculo.acel_desejada =
+                                -delta_v * delta_v / (2.0 * (dist - afrente_comp));
+                        }
                     }
                 }
             }

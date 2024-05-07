@@ -42,16 +42,15 @@ pub trait Controlador {
 }
 
 // Usado para definir o tipo de controlador
-#[allow(unused)]
 pub enum TipoControlador {
-    Semaforo,
-    FazNada,
+    SEMAFORO,
+    FAZNADA,
 }
 
 // Usado neste módulo para armazenar o controlador usado
 enum MeuControlador {
-    Semaforo(Semaforo),
-    Faznada(FazNada),
+    SEMAFORO(Semaforo),
+    FAZNADA(FazNada),
 }
 
 // Descreve a situação de um veículo em particular
@@ -82,8 +81,8 @@ impl Controle {
         Self {
             situacao: HashMap::new(),
             controlador: match tipo {
-                TipoControlador::Semaforo => MeuControlador::Semaforo(Semaforo::new(true)),
-                TipoControlador::FazNada => MeuControlador::Faznada(FazNada::new(true)),
+                TipoControlador::SEMAFORO => MeuControlador::SEMAFORO(Semaforo::new(true)),
+                TipoControlador::FAZNADA => MeuControlador::FAZNADA(FazNada::new(true)),
             },
             display_tudo: true,
         }
@@ -146,8 +145,8 @@ impl Controle {
         // self.controlador.estrategia(tempo_decorrido, &mut self.situacao);
 
         match &mut self.controlador {
-            MeuControlador::Semaforo(ss) => ss.estrategia(tempo_decorrido, &mut self.situacao),
-            MeuControlador::Faznada(nn) => nn.estrategia(tempo_decorrido, &mut self.situacao),
+            MeuControlador::SEMAFORO(ss) => ss.estrategia(tempo_decorrido, &mut self.situacao),
+            MeuControlador::FAZNADA(nn) => nn.estrategia(tempo_decorrido, &mut self.situacao),
         }
 
         // Envia novas acelerações para os veículos
@@ -161,7 +160,8 @@ impl Controle {
             if self.display_tudo {
                 println!(
                     "#controlador setAceleracao de @{} em {}",
-                    k, v.acel_desejada
+                    k.to_string(),
+                    v.acel_desejada
                 );
             }
         }

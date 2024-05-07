@@ -111,8 +111,8 @@ impl Transito {
     fn define_velocidade_chegada(&self, via: &Via) -> f64 {
         match via {
             Via::ViaH => {
-                if self.carros_via_h.is_empty() {
-                    veiculos::VELOCIDADE_CRUZEIRO
+                if self.carros_via_h.len() == 0 {
+                    return veiculos::VELOCIDADE_CRUZEIRO;
                 } else {
                     let ultimo_carro = self.carros_via_h.last().unwrap();
                     let distancia =
@@ -120,7 +120,7 @@ impl Transito {
 
                     if distancia < 0.5 {
                         // Considera via parada, não chega
-                        0.0
+                        return 0.0;
                     } else if distancia < 4.0 {
                         // Considera via congestionada, chega como pelotão
                         return veiculos::VELOCIDADE_CRUZEIRO.min(ultimo_carro.vel_atual);
@@ -130,8 +130,8 @@ impl Transito {
                 }
             }
             Via::ViaV => {
-                if self.carros_via_v.is_empty() {
-                    veiculos::VELOCIDADE_CRUZEIRO
+                if self.carros_via_v.len() == 0 {
+                    return veiculos::VELOCIDADE_CRUZEIRO;
                 } else {
                     let ultimo_carro = self.carros_via_v.last().unwrap();
                     let distancia =
@@ -139,7 +139,7 @@ impl Transito {
 
                     if distancia < 0.5 {
                         // Considera via parada, não chega
-                        0.0
+                        return 0.0;
                     } else if distancia < 4.0 {
                         // Considera via congestionada, chega como pelotão
                         return veiculos::VELOCIDADE_CRUZEIRO.min(ultimo_carro.vel_atual);
@@ -167,7 +167,7 @@ impl Transito {
 
         comunicacao.send_por_veiculo(MensagemDeVeiculo::Chegada {
             placa: nova_placa,
-            via,
+            via: via,
             acel_max: novo_carro.acel_max,
             acel_min: novo_carro.acel_min,
             vel_max: novo_carro.vel_max,
@@ -203,8 +203,8 @@ impl Transito {
         // Carro mais antigo na via H saiu do sistema ?
         // Obs: Seria melhor usar VeqDeque no lugar de Vec neste caso
         // https://doc.rust-lang.org/std/collections/struct.VecDeque.html#
-        if !self.carros_via_h.is_empty() {
-            let mais_antigo_h = self.carros_via_h.first().unwrap();
+        if self.carros_via_h.len() > 0 {
+            let mais_antigo_h = self.carros_via_h.get(0).unwrap();
             if mais_antigo_h.pos_atual > mais_antigo_h.comprimento + VIAV_LARGURA {
                 println!("@{} saiu da via H", mais_antigo_h.placa);
                 self.carros_via_h.remove(0);
@@ -214,8 +214,8 @@ impl Transito {
         // Carro mais antigo na via V saiu do sistema ?
         // Obs: Seria melhor usar VeqDeque no lugar de Vec neste caso
         // https://doc.rust-lang.org/std/collections/struct.VecDeque.html#
-        if !self.carros_via_v.is_empty() {
-            let mais_antigo_v = self.carros_via_v.first().unwrap();
+        if self.carros_via_v.len() > 0 {
+            let mais_antigo_v = self.carros_via_v.get(0).unwrap();
             if mais_antigo_v.pos_atual > mais_antigo_v.comprimento + VIAH_LARGURA {
                 println!("@{} saiu da via V", mais_antigo_v.placa);
                 self.carros_via_v.remove(0);
@@ -239,6 +239,6 @@ impl Transito {
 
     // Verifica se algum carro no sistema
     pub fn vazio(&self) -> bool {
-        self.carros_via_h.is_empty() && self.carros_via_v.is_empty()
+        self.carros_via_h.len() == 0 && self.carros_via_v.len() == 0
     }
 }

@@ -75,7 +75,6 @@ impl Comunicacao {
     }
 
     // Permite o controlador enviar mensagens
-    #[allow(clippy::unwrap_or_default)]
     pub fn send_por_controlador(&mut self, placa: String, msg: MensagemDoControlador) {
         let lista = self
             .mensagens_do_controlador
@@ -94,7 +93,7 @@ impl Comunicacao {
 
     // Permite ao controlador receber uma mensagem vinda de veículo
     pub fn receive_por_controlador(&mut self) -> Option<MensagemDeVeiculo> {
-        if self.mensagens_de_veiculo.is_empty() {
+        if self.mensagens_de_veiculo.len() == 0 {
             Option::None
         } else {
             Option::Some(self.mensagens_de_veiculo.swap_remove(0))
