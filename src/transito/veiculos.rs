@@ -37,7 +37,7 @@ impl Carro {
         assert!(res, "   Placa inválida: {} @{}", msg, placa);
 
         assert!(
-            acel >= ACELERACAO_MINIMA && acel <= ACELERACAO_MAXIMA,
+            (ACELERACAO_MINIMA..=ACELERACAO_MAXIMA).contains(&acel),
             "   Aceleração inválida: {} {}",
             placa,
             acel
@@ -45,7 +45,7 @@ impl Carro {
 
         Self {
             placa,
-            via: via.clone(),
+            via,
             acel_max: ACELERACAO_MAXIMA,
             acel_min: ACELERACAO_MINIMA,
             vel_max: VELOCIDADE_MAXIMA,
@@ -105,7 +105,7 @@ impl Carro {
             + self.vel_atual * (tickms / 1000.0)
             + self.acel_atual * (tickms / 1000.0) * (tickms / 1000.0) / 2.0;
 
-        self.vel_atual = self.vel_atual + self.acel_atual * (tickms / 1000.0);
+        self.vel_atual += self.acel_atual * (tickms / 1000.0);
 
         // Restrições de um carro
         if self.pos_atual < pos_anterior {
@@ -135,7 +135,7 @@ impl Carro {
                     MensagemDoControlador::PedeSituacao { placa } => {
                         println!("#veiculo @{} informa sua situacao", &self.placa);
                         let msg = MensagemDeVeiculo::SituacaoAtual {
-                            placa: placa,
+                            placa,
                             pos_atual: self.pos_atual,
                             vel_atual: self.vel_atual,
                             acel_atual: self.acel_atual,

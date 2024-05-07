@@ -62,7 +62,7 @@ fn simula_mundo() {
     let mut tempo_ateh_proxima_chegada = TEMPO_ENTRE_CHEGADAS;
 
     // Cria uma estrutura de controle	!!!
-    let mut controle = Controle::new(TipoControlador::SEMAFORO);
+    let mut controle = Controle::new(TipoControlador::Semaforo);
     //	let mut controle = Controle::new(TipoControlador::FAZNADA);
 
     // Tempo até a próxima ação de controle

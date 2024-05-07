@@ -79,7 +79,7 @@ impl Comunicacao {
         let lista = self
             .mensagens_do_controlador
             .entry(placa)
-            .or_insert(VecDeque::new());
+            .or_default();
         lista.push_back(msg);
     }
 
@@ -93,7 +93,7 @@ impl Comunicacao {
 
     // Permite ao controlador receber uma mensagem vinda de veículo
     pub fn receive_por_controlador(&mut self) -> Option<MensagemDeVeiculo> {
-        if self.mensagens_de_veiculo.len() == 0 {
+        if self.mensagens_de_veiculo.is_empty() {
             Option::None
         } else {
             Option::Some(self.mensagens_de_veiculo.swap_remove(0))
