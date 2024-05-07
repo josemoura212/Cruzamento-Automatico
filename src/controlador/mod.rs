@@ -22,7 +22,7 @@
 
 use std::collections::HashMap;
 
-//use std::time::Instant;	//Caso queira saber o tempo real
+use std::time::Instant;
 
 use crate::comunicacao::{Comunicacao, MensagemDeVeiculo, MensagemDoControlador};
 
@@ -33,6 +33,8 @@ use faz_nada::FazNada;
 
 mod semaforo;
 use semaforo::Semaforo;
+
+const TEMPO_ENTRE_CONTROLES: f64 = 500.0; // Tempo entre ações de controle, em ms
 
 // Descreve funções exigidas de um Controlador implementado como submódulo
 pub trait Controlador {
@@ -45,14 +47,14 @@ pub trait Controlador {
 
 // Usado para definir o tipo de controlador
 pub enum TipoControlador {
-    SEMAFORO,
-    FAZNADA,
+    Semaforo,
+    FazNada,
 }
 
 // Usado neste módulo para armazenar o controlador usado
 enum MeuControlador {
-    SEMAFORO(Semaforo),
-    FAZNADA(FazNada),
+    Semaforo(Semaforo),
+    FazNada(FazNada),
 }
 
 // Descreve a situação de um veículo em particular
@@ -68,6 +70,7 @@ pub struct Situacao {
     vel_atual: f64,     // metros por segundo
     acel_atual: f64,    // metros por segundo ao quadrado
     acel_desejada: f64, // aceleração desejada pelo controle, metros por segundo ao quadrado
+    estou_vivo: i32,    // recarrega quando tem comunicação
 }
 
 // Informações necessárias para realizar o controle
@@ -75,6 +78,8 @@ pub struct Controle {
     situacao: HashMap<String, Situacao>,
     controlador: MeuControlador,
     display_tudo: bool,
+    tempo_ateh_proxima_solicitacao: f64,
+    tempo_ateh_proxima_estrategia: f64,
 }
 
 impl Controle {
@@ -83,19 +88,18 @@ impl Controle {
         Self {
             situacao: HashMap::new(),
             controlador: match tipo {
-                TipoControlador::SEMAFORO => MeuControlador::SEMAFORO(Semaforo::new(true)),
-                TipoControlador::FAZNADA => MeuControlador::FAZNADA(FazNada::new(true)),
+                TipoControlador::Semaforo => MeuControlador::Semaforo(Semaforo::new(true)),
+                TipoControlador::FazNada => MeuControlador::FazNada(FazNada::new(true)),
             },
             display_tudo: true,
+            tempo_ateh_proxima_solicitacao: TEMPO_ENTRE_CONTROLES - 100.0,
+            tempo_ateh_proxima_estrategia: TEMPO_ENTRE_CONTROLES,
         }
     }
 
     // Ação periódica de controle
     pub fn acao_controle(&mut self, tempo_decorrido: f64, comunicacao: &mut Comunicacao) {
-        // Caso queira saber o tempo real
-        // println!("-----------------Depois do sleep (s): {:?}", Instant::now()); !!!
-
-        // Processa as mensagens recebidas
+        // Processa as mensagens recebidas em todos os ciclos
         loop {
             match comunicacao.receive_por_controlador() {
                 None => break,
@@ -124,6 +128,7 @@ impl Controle {
                                 vel_atual: 0.0,
                                 acel_atual: 0.0,
                                 acel_desejada: 0.0,
+                                estou_vivo: 2,
                             };
                             self.situacao.insert(novo.placa.clone(), novo);
                         }
@@ -142,6 +147,7 @@ impl Controle {
                                     veiculo.pos_atual = pos_atual;
                                     veiculo.vel_atual = vel_atual;
                                     veiculo.acel_atual = acel_atual;
+                                    veiculo.estou_vivo = 2;
                                 }
                             }
                         }
@@ -150,54 +156,67 @@ impl Controle {
             }
         }
 
-        // Retira da 'situacao' veículos que já sairam do cruzamento	!!!
-        let mut retirar: Vec<String> = Vec::new();
-        for (_k, v) in self.situacao.iter() {
-            let limite = match v.via {
-                Via::ViaH => v.comprimento + transito::VIAV_LARGURA,
-                Via::ViaV => v.comprimento + transito::VIAH_LARGURA,
-            };
-            if v.pos_atual > limite {
-                retirar.push(v.placa.clone());
+        // Solicita nova situação de todos os veículos conhecidos
+        self.tempo_ateh_proxima_solicitacao -= tempo_decorrido;
+        if self.tempo_ateh_proxima_solicitacao <= 0.0 {
+            self.tempo_ateh_proxima_solicitacao += TEMPO_ENTRE_CONTROLES;
+            for placa in self.situacao.keys() {
+                // só precisa das chaves
+                println!("#controlador solicita situacao de @{}", placa);
+                let msg = MensagemDoControlador::PedeSituacao {
+                    placa: placa.to_string(),
+                };
+                comunicacao.send_por_controlador(placa.to_string(), msg);
             }
         }
 
-        for k in retirar {
-            println!("#controlador retira da base de dados veículo @{}", k);
-            self.situacao.remove(&k);
-        }
+        // Se está na hora:
+        //		(1) Retira da 'situacao' veículos que já sairam do cruzamento
+        // 		(2) Calcula as ações de controle
+        // 		(3) Envia novas acelerações para os veículos
+        self.tempo_ateh_proxima_estrategia -= tempo_decorrido;
+        if self.tempo_ateh_proxima_estrategia <= 0.0 {
+            self.tempo_ateh_proxima_estrategia += TEMPO_ENTRE_CONTROLES;
+            println!("#controlador: depois do sleep (s): {:?}", Instant::now());
 
-        // Calcula as ações de controle
-        match &mut self.controlador {
-            MeuControlador::SEMAFORO(ss) => ss.estrategia(tempo_decorrido, &mut self.situacao),
-            MeuControlador::FAZNADA(nn) => nn.estrategia(tempo_decorrido, &mut self.situacao),
-        }
-
-        // Envia novas acelerações para os veículos
-        for (k, v) in &self.situacao {
-            let msg = MensagemDoControlador::SetAcel {
-                placa: k.to_string(),
-                acel: v.acel_desejada,
-            };
-            comunicacao.send_por_controlador(k.to_string(), msg);
-
-            if self.display_tudo {
-                println!(
-                    "#controlador setAceleracao de @{} em {:.2}",
-                    k.to_string(),
-                    v.acel_desejada
-                );
+            // (1) Retira da 'situacao' veículos que já sairam do cruzamento
+            let mut retirar: Vec<String> = Vec::new();
+            for (_k, v) in self.situacao.iter_mut() {
+                v.estou_vivo -= 1;
+                if v.estou_vivo == 0 {
+                    retirar.push(v.placa.clone());
+                }
             }
-        }
+            for k in retirar {
+                println!("#controlador retira da base de dados veículo @{}", k);
+                self.situacao.remove(&k);
+            }
 
-        // Solicita nova situação de todos
-        //for (placa, situacao) in &self.situacao {
-        for placa in self.situacao.keys() {
-            println!("#controlador solicita situacao de @{}", placa);
-            let msg = MensagemDoControlador::PedeSituacao {
-                placa: placa.to_string(),
-            };
-            comunicacao.send_por_controlador(placa.to_string(), msg);
+            // (2) Calcula as ações de controle
+            match &mut self.controlador {
+                MeuControlador::Semaforo(ss) => {
+                    ss.estrategia(TEMPO_ENTRE_CONTROLES, &mut self.situacao)
+                }
+                MeuControlador::FazNada(nn) => {
+                    nn.estrategia(TEMPO_ENTRE_CONTROLES, &mut self.situacao)
+                }
+            }
+
+            // (3) Envia novas acelerações para os veículos
+            for (k, v) in &self.situacao {
+                let msg = MensagemDoControlador::SetAcel {
+                    placa: k.to_string(),
+                    acel: v.acel_desejada,
+                };
+                comunicacao.send_por_controlador(k.to_string(), msg);
+
+                if self.display_tudo {
+                    println!(
+                        "#controlador setAceleracao de @{} em {:.2}",
+                        k, v.acel_desejada
+                    );
+                }
+            }
         }
     }
 }

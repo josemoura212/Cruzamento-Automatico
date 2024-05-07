@@ -1,7 +1,8 @@
-/* 	Projeto do Cruzamento Automático - versão s11 a03
+/* 	Projeto do Cruzamento Automático - versão s11 a04
 
 */
 
+use core::f32;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -9,19 +10,15 @@ use rand::Rng; // Para gerar números aleatórios, não é 'std::'
                // Requer [dependencies] rand = "0.8.5"
 
 use std::env; // Para acessar os argumentos da linha de comando, exemplo:
-              // cargo run -- s|n 3.0 5.0
+              // cargo run -- s/n/o 2.0 3.0
               /*
               use device_query::{DeviceQuery, DeviceState, Keycode};	// Para acessar o teclado, não é 'std::'
                                                                       // Requer [dependencies] device_query = "1.1.3"
               */
 
-// https://crates.io/crates/speedy2d
-// Para gráficos
-// requer [dependencies] speedy2d = "1.12.0"
-// https://docs.rs/speedy2d/1.12.0/speedy2d/
-use speedy2d::color::Color;
+use speedy2d::color::Color; // Para gráficos
 use speedy2d::dimen::Vector2;
-use speedy2d::font::{Font, TextLayout, TextOptions};
+use speedy2d::font::{Font, TextLayout, TextOptions}; // requer [dependencies] speedy2d = "1.12.0"
 use speedy2d::window::{WindowHandler, WindowHelper};
 use speedy2d::{Graphics2D, Window};
 
@@ -31,6 +28,7 @@ mod transito;
 
 use transito::{Transito, Via, VIAH_LARGURA, VIAV_LARGURA};
 use transito::{VIAH_MARGEM, VIAH_TOTAL, VIAV_MARGEM, VIAV_TOTAL};
+//use transito::veiculos::Carro;
 
 use controlador::{Controle, TipoControlador};
 
@@ -58,17 +56,16 @@ use comunicacao::Comunicacao;
 
 */
 
-const TICKMS: f64 = 100.0; // Passo da simulação, em ms
-const TEMPO_ENTRE_CONTROLES: f64 = 1000.0; // Tempo entre ações de controle, em ms
+const TICKMS: f64 = 50.0; // Passo da simulação, em ms
 
 // Struct necessária para a biblioteca gráfica
 struct MyWindowHandler {
     simular: bool,        // true significa não está pausado
     finalizada: bool,     // true significa simulação concluida
+    simulacao: Simulacao, // Dados da simulação
     largura_total: f64,   // Largura total da janela em pixels
     altura_total: f64,    // Altura total da janela em pixels
     fonte: Font,          // Fonte a ser usado na janela grafica
-    simulacao: Simulacao, // Dados da simulação
 }
 
 // Callbacks da biblioteca gráfica chegam nestes métodos
@@ -100,7 +97,6 @@ impl WindowHandler for MyWindowHandler {
             4.0,
             Color::BLACK,
         );
-
         graphics.draw_line(
             (0.0, y2),
             (self.largura_total as f32, y2),
@@ -154,7 +150,7 @@ impl WindowHandler for MyWindowHandler {
                     lado = 0.0;
                 }
 
-                let tex_1 = format!("{}", carro.placa,);
+                let tex_1 = carro.placa.to_string();
                 let texto_1 = self.fonte.layout_text(&tex_1, escala, TextOptions::new());
                 graphics.draw_text((x - 10.0, y + 10.0 + lado), Color::BLACK, &texto_1);
 
@@ -206,7 +202,7 @@ impl WindowHandler for MyWindowHandler {
                     lado = 0.0;
                 }
 
-                let tex_1 = format!("{}", carro.placa,);
+                let tex_1 = carro.placa.to_string();
                 let texto_1 = self.fonte.layout_text(&tex_1, escala, TextOptions::new());
                 graphics.draw_text((x - 50.0 + lado, y + 5.0), Color::BLACK, &texto_1);
 
@@ -263,13 +259,12 @@ fn tempo_entre_chegadas(min: f64, max: f64) -> f64 {
 // Descritor da simulação como um todo
 struct Simulacao {
     cont: char,
-    tec_min: f64, // tempo entre chegadas
+    tec_min: f64,
     tec_max: f64,
     transito: Transito,
     comunicacao: Comunicacao,
     controle: Controle,
     tempo_ateh_proxima_chegada: f64,
-    tempo_ateh_proximo_controle: f64,
 }
 
 // Laço de simulação, returna false no caso de finalizar a simulação
@@ -280,19 +275,19 @@ fn laco_simulacao(simul: &mut Simulacao) -> bool {
     // Atualiza estado do trânsito
     simul.transito.tick(TICKMS, &mut simul.comunicacao);
 
+    // Atualiza estado do controlador
+    simul.controle.acao_controle(TICKMS, &mut simul.comunicacao);
+
     // Mostra estado das vias
     simul.transito.mostra_vias();
 
     // Aborta a simulação se ocorreu colisão
-    match simul.transito.ocorreu_colisao() {
-        Some(m) => {
-            println!(
-                "Ocorreu colisao, controlador {}, tempos entre {} e {}: {}",
-                simul.cont, simul.tec_min, simul.tec_max, m
-            );
-            return false;
-        }
-        None => {}
+    if let Some(m) = simul.transito.ocorreu_colisao() {
+        println!(
+            "Ocorreu colisao, controlador {}, tempos entre {} e {}: {}",
+            simul.cont, simul.tec_min, simul.tec_max, m
+        );
+        return false;
     }
 
     // Verifica se tem algum carro no sistema
@@ -324,15 +319,10 @@ fn laco_simulacao(simul: &mut Simulacao) -> bool {
         simul.tempo_ateh_proxima_chegada += tempo_entre_chegadas(simul.tec_min, simul.tec_max);
     }
 
-    // Verifica se está na hora de chamar o controlador
-    simul.tempo_ateh_proximo_controle -= TICKMS;
-
-    if simul.tempo_ateh_proximo_controle <= 0.0 {
-        simul
-            .controle
-            .acao_controle(TEMPO_ENTRE_CONTROLES, &mut simul.comunicacao);
-        simul.tempo_ateh_proximo_controle += TEMPO_ENTRE_CONTROLES;
-    };
+    println!(
+        "#main: tempo_ateh_proxima_chegada {}",
+        simul.tempo_ateh_proxima_chegada
+    );
 
     true
 }
@@ -345,13 +335,13 @@ fn simula_mundo(cont: char, tec_min: f64, tec_max: f64, tam_janela: f64) {
     // Cria uma descrição de trânsito
     let mut transito = Transito::new();
 
-    // Cria o primeiro carro da via H
+    // Cria o primeiro carro da via H			!!!
     match transito.chega_carro(Via::ViaH, &mut comunicacao) {
         Ok(_) => (),
         Err(msg) => println!("Via H: {}", msg),
     };
 
-    // Cria o primeiro carro da via V
+    // Cria o primeiro carro da via V			!!!
     match transito.chega_carro(Via::ViaV, &mut comunicacao) {
         Ok(_) => (),
         Err(msg) => println!("Via V: {}", msg),
@@ -359,21 +349,20 @@ fn simula_mundo(cont: char, tec_min: f64, tec_max: f64, tam_janela: f64) {
 
     // Cria uma estrutura de controle
     let controle = match cont {
-        's' => Controle::new(TipoControlador::SEMAFORO),
-        'n' => Controle::new(TipoControlador::FAZNADA),
+        's' => Controle::new(TipoControlador::Semaforo),
+        'n' => Controle::new(TipoControlador::FazNada),
         _other => panic!("Tipo de controlador não é s|n."),
     };
 
     // Descritor da simulação
     let simul = Simulacao {
         cont,
-        tec_min,
+        tec_min, // Tempo entre chegadas
         tec_max,
         transito,
         comunicacao,
         controle,
         tempo_ateh_proxima_chegada: tempo_entre_chegadas(tec_min, tec_max),
-        tempo_ateh_proximo_controle: TEMPO_ENTRE_CONTROLES,
     };
 
     // Cria janela sem evento de usuario
@@ -390,7 +379,7 @@ fn simula_mundo(cont: char, tec_min: f64, tec_max: f64, tam_janela: f64) {
         simulacao: simul,
         altura_total: tam_janela,
         largura_total: tam_janela,
-        fonte: fonte,
+        fonte,
     });
 }
 
@@ -435,7 +424,7 @@ fn main() {
     let result_tam_janela = args[4].trim().parse::<f64>();
     let tam_janela = result_tam_janela
         .expect("Uso: <s|n>  <min entre chegadas>  <max entre chegadas> <tam janela>");
-    if tam_janela < 200.0 || tam_janela > 1000.0 {
+    if !(200.0..=1000.0).contains(&tam_janela) {
         println!("Tamanho da janela deve estar entre 200 e 1000.");
         return;
     }

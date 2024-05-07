@@ -54,6 +54,12 @@ pub struct Comunicacao {
     mensagens_do_controlador: HashMap<String, VecDeque<MensagemDoControlador>>,
 }
 
+/*
+    Controlador pode mandar várias mensagens para o mesmo carro
+    Comunicação precisa de vet para enfileirar as mensagens para um mesmo carro
+    Preciso de um hashmap de vets de MensagemDoControlador
+*/
+
 impl Comunicacao {
     // Cria um novo sistema de comunicação
     pub fn new() -> Self {
@@ -69,6 +75,7 @@ impl Comunicacao {
     }
 
     // Permite o controlador enviar mensagens
+    #[allow(clippy::unwrap_or_default)]
     pub fn send_por_controlador(&mut self, placa: String, msg: MensagemDoControlador) {
         let lista = self
             .mensagens_do_controlador
@@ -87,7 +94,7 @@ impl Comunicacao {
 
     // Permite ao controlador receber uma mensagem vinda de veículo
     pub fn receive_por_controlador(&mut self) -> Option<MensagemDeVeiculo> {
-        if self.mensagens_de_veiculo.len() == 0 {
+        if self.mensagens_de_veiculo.is_empty() {
             Option::None
         } else {
             Option::Some(self.mensagens_de_veiculo.swap_remove(0))

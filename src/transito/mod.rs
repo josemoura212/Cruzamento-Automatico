@@ -25,7 +25,7 @@ use crate::comunicacao::{Comunicacao, MensagemDeVeiculo};
 pub mod veiculos;
 pub use veiculos::Carro;
 
-pub const VIAH_MARGEM: f64 = 15.0; //metros			pub!!!
+pub const VIAH_MARGEM: f64 = 15.0; //metros
 pub const VIAV_MARGEM: f64 = 15.0; //metros
 
 pub const VIAH_LARGURA: f64 = 4.0; //metros
@@ -62,7 +62,7 @@ impl Transito {
         }
     }
 
-    // Retorna iterador sobre carros de uma via		!!!
+    // Retorna iterador sobre carros de uma via
     pub fn get_iterador(&self, via: Via) -> std::slice::Iter<Carro> {
         match via {
             Via::ViaH => self.carros_via_h.iter(),
@@ -118,45 +118,37 @@ impl Transito {
         None
     }
 
-    // Define a velocidade com a qual o veiculo ingressa no perímetro		!!!
+    // Define a velocidade com a qual o veiculo ingressa no perímetro	!!!
     fn define_velocidade_chegada(&self, via: &Via) -> f64 {
         match via {
             Via::ViaH => {
-                if self.carros_via_h.len() == 0 {
-                    return veiculos::VELOCIDADE_CRUZEIRO;
+                if self.carros_via_h.is_empty() {
+                    veiculos::VELOCIDADE_CRUZEIRO // Sozinho na via
                 } else {
                     let ultimo_carro = self.carros_via_h.last().unwrap();
                     let distancia =
                         VIAH_PERIMETRO + ultimo_carro.pos_atual - ultimo_carro.comprimento;
-                    if distancia < 0.5 {
+                    if distancia < 20.0 {
                         // Considera via parada, não chega
                         return 0.0;
                     }
-                    let raiz = ultimo_carro.vel_atual.powi(2)
-                        - 2.0
-                            * ultimo_carro.acel_min
-                            * (VIAH_PERIMETRO + ultimo_carro.pos_atual
-                                - ultimo_carro.comprimento
-                                - 0.5);
-                    if raiz <= 0.0 {
-                        return 0.0;
-                    }
-                    let vel_dist = raiz.sqrt();
-                    if vel_dist < veiculos::VELOCIDADE_CRUZEIRO {
-                        return vel_dist;
+                    // Qual velocidade de chegada para levar 2s até o da frente ?
+                    let velocidade = distancia / 2.0;
+                    if velocidade < veiculos::VELOCIDADE_CRUZEIRO {
+                        velocidade
                     } else {
-                        return veiculos::VELOCIDADE_CRUZEIRO;
+                        veiculos::VELOCIDADE_CRUZEIRO
                     }
                 }
             }
             Via::ViaV => {
-                if self.carros_via_v.len() == 0 {
-                    return veiculos::VELOCIDADE_CRUZEIRO;
+                if self.carros_via_v.is_empty() {
+                    veiculos::VELOCIDADE_CRUZEIRO
                 } else {
                     let ultimo_carro = self.carros_via_v.last().unwrap();
                     let distancia =
                         VIAV_PERIMETRO + ultimo_carro.pos_atual - ultimo_carro.comprimento;
-                    if distancia < 0.5 {
+                    if distancia < 20.0 {
                         // Considera via parada, não chega
                         return 0.0;
                     }
@@ -171,9 +163,9 @@ impl Transito {
                     }
                     let vel_dist = raiz.sqrt();
                     if vel_dist < veiculos::VELOCIDADE_CRUZEIRO {
-                        return vel_dist;
+                        vel_dist
                     } else {
-                        return veiculos::VELOCIDADE_CRUZEIRO;
+                        veiculos::VELOCIDADE_CRUZEIRO
                     }
                 }
             }
@@ -196,7 +188,7 @@ impl Transito {
 
         comunicacao.send_por_veiculo(MensagemDeVeiculo::Chegada {
             placa: nova_placa,
-            via: via,
+            via,
             acel_max: novo_carro.acel_max,
             acel_min: novo_carro.acel_min,
             vel_max: novo_carro.vel_max,
@@ -232,10 +224,9 @@ impl Transito {
         // Carro mais antigo na via H saiu do sistema ?
         // Obs: Seria melhor usar VeqDeque no lugar de Vec neste caso
         // https://doc.rust-lang.org/std/collections/struct.VecDeque.html#
-        if self.carros_via_h.len() > 0 {
-            let mais_antigo_h = self.carros_via_h.get(0).unwrap();
+        if !self.carros_via_h.is_empty() {
+            let mais_antigo_h = self.carros_via_h.first().unwrap();
             if mais_antigo_h.pos_atual > mais_antigo_h.comprimento + VIAV_LARGURA + VIAH_MARGEM {
-                // !!!
                 println!("@{} saiu da via H", mais_antigo_h.placa);
                 self.carros_via_h.remove(0);
             }
@@ -244,10 +235,9 @@ impl Transito {
         // Carro mais antigo na via V saiu do sistema ?
         // Obs: Seria melhor usar VeqDeque no lugar de Vec neste caso
         // https://doc.rust-lang.org/std/collections/struct.VecDeque.html#
-        if self.carros_via_v.len() > 0 {
-            let mais_antigo_v = self.carros_via_v.get(0).unwrap();
+        if !self.carros_via_v.is_empty() {
+            let mais_antigo_v = self.carros_via_v.first().unwrap();
             if mais_antigo_v.pos_atual > mais_antigo_v.comprimento + VIAH_LARGURA + VIAV_MARGEM {
-                // !!!
                 println!("@{} saiu da via V", mais_antigo_v.placa);
                 self.carros_via_v.remove(0);
             }
@@ -270,6 +260,6 @@ impl Transito {
 
     // Verifica se algum carro no sistema
     pub fn vazio(&self) -> bool {
-        self.carros_via_h.len() == 0 && self.carros_via_v.len() == 0
+        self.carros_via_h.is_empty() && self.carros_via_v.is_empty()
     }
 }
