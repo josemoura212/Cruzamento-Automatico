@@ -161,8 +161,7 @@ impl Controle {
             if self.display_tudo {
                 println!(
                     "#controlador setAceleracao de @{} em {}",
-                    k,
-                    v.acel_desejada
+                    k, v.acel_desejada
                 );
             }
         }

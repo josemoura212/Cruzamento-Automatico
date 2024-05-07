@@ -81,12 +81,9 @@ fn simula_mundo() {
         transito.mostra_vias();
 
         // Aborta a simulação se ocorreu colisão
-        match transito.ocorreu_colisao() {
-            Some(m) => {
-                println!("Ocorreu colisao: {}", m);
-                return;
-            }
-            None => {}
+        if let Some(m) = transito.ocorreu_colisao() {
+            println!("Ocorreu colisao: {}", m);
+            return;
         }
 
         // Verifica se tem algum carro no sistema

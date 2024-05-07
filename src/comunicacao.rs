@@ -76,10 +76,7 @@ impl Comunicacao {
 
     // Permite o controlador enviar mensagens
     pub fn send_por_controlador(&mut self, placa: String, msg: MensagemDoControlador) {
-        let lista = self
-            .mensagens_do_controlador
-            .entry(placa)
-            .or_default();
+        let lista = self.mensagens_do_controlador.entry(placa).or_default();
         lista.push_back(msg);
     }
 

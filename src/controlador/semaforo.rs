@@ -213,8 +213,7 @@ impl Controlador for Semaforo {
                     } else if dist <= espacamento {
                         veiculo.acel_desejada = veiculo.acel_min;
                     } else {
-                        veiculo.acel_desejada =
-                            -delta_v * delta_v / (2.0 * (dist - afrente_comp));
+                        veiculo.acel_desejada = -delta_v * delta_v / (2.0 * (dist - afrente_comp));
                     }
                 }
             }
