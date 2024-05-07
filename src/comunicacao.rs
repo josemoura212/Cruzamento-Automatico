@@ -54,12 +54,6 @@ pub struct Comunicacao {
     mensagens_do_controlador: HashMap<String, VecDeque<MensagemDoControlador>>,
 }
 
-/*
-    Controlador pode mandar várias mensagens para o mesmo carro
-    Comunicação precisa de vet para enfileirar as mensagens para um mesmo carro
-    Preciso de um hashmap de vets de MensagemDoControlador
-*/
-
 impl Comunicacao {
     // Cria um novo sistema de comunicação
     pub fn new() -> Self {

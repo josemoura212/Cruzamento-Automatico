@@ -22,17 +22,20 @@
 
 use crate::comunicacao::{Comunicacao, MensagemDeVeiculo};
 
-mod veiculos;
-use veiculos::Carro;
+pub mod veiculos;
+pub use veiculos::Carro;
 
-const _VIAH_MARGEM: f64 = 15.0; //metros
-const _VIAV_MARGEM: f64 = 15.0; //metros
+pub const VIAH_MARGEM: f64 = 15.0; //metros			pub!!!
+pub const VIAV_MARGEM: f64 = 15.0; //metros
 
 pub const VIAH_LARGURA: f64 = 4.0; //metros
 pub const VIAV_LARGURA: f64 = 4.0; //metros
 
-const VIAH_PERIMETRO: f64 = 150.0; //metros
-const VIAV_PERIMETRO: f64 = 150.0; //metros
+pub const VIAH_PERIMETRO: f64 = 150.0; //metros
+pub const VIAV_PERIMETRO: f64 = 150.0; //metros
+
+pub const VIAH_TOTAL: f64 = VIAH_PERIMETRO + VIAV_LARGURA + VIAH_MARGEM; // metros
+pub const VIAV_TOTAL: f64 = VIAV_PERIMETRO + VIAH_LARGURA + VIAV_MARGEM; // metros
 
 // Cruzamento entre duas vias
 // 'enum' tem semântica 'move', mas 'Via' é barato para fazer copy
@@ -56,6 +59,14 @@ impl Transito {
             carros_via_h: Vec::new(),
             carros_via_v: Vec::new(),
             carros_criados: 0,
+        }
+    }
+
+    // Retorna iterador sobre carros de uma via		!!!
+    pub fn get_iterador(&self, via: Via) -> std::slice::Iter<Carro> {
+        match via {
+            Via::ViaH => self.carros_via_h.iter(),
+            Via::ViaV => self.carros_via_v.iter(),
         }
     }
 
@@ -107,7 +118,7 @@ impl Transito {
         None
     }
 
-    // Define a velocidade com a qual o veiculo ingressa no perímetro
+    // Define a velocidade com a qual o veiculo ingressa no perímetro		!!!
     fn define_velocidade_chegada(&self, via: &Via) -> f64 {
         match via {
             Via::ViaH => {
@@ -117,15 +128,24 @@ impl Transito {
                     let ultimo_carro = self.carros_via_h.last().unwrap();
                     let distancia =
                         VIAH_PERIMETRO + ultimo_carro.pos_atual - ultimo_carro.comprimento;
-
                     if distancia < 0.5 {
                         // Considera via parada, não chega
                         return 0.0;
-                    } else if distancia < 4.0 {
-                        // Considera via congestionada, chega como pelotão
-                        return veiculos::VELOCIDADE_CRUZEIRO.min(ultimo_carro.vel_atual);
+                    }
+                    let raiz = ultimo_carro.vel_atual.powi(2)
+                        - 2.0
+                            * ultimo_carro.acel_min
+                            * (VIAH_PERIMETRO + ultimo_carro.pos_atual
+                                - ultimo_carro.comprimento
+                                - 0.5);
+                    if raiz <= 0.0 {
+                        return 0.0;
+                    }
+                    let vel_dist = raiz.sqrt();
+                    if vel_dist < veiculos::VELOCIDADE_CRUZEIRO {
+                        return vel_dist;
                     } else {
-                        veiculos::VELOCIDADE_CRUZEIRO // Considera via livre
+                        return veiculos::VELOCIDADE_CRUZEIRO;
                     }
                 }
             }
@@ -136,15 +156,24 @@ impl Transito {
                     let ultimo_carro = self.carros_via_v.last().unwrap();
                     let distancia =
                         VIAV_PERIMETRO + ultimo_carro.pos_atual - ultimo_carro.comprimento;
-
                     if distancia < 0.5 {
                         // Considera via parada, não chega
                         return 0.0;
-                    } else if distancia < 4.0 {
-                        // Considera via congestionada, chega como pelotão
-                        return veiculos::VELOCIDADE_CRUZEIRO.min(ultimo_carro.vel_atual);
+                    }
+                    let raiz = ultimo_carro.vel_atual.powi(2)
+                        - 2.0
+                            * ultimo_carro.acel_min
+                            * (VIAV_PERIMETRO + ultimo_carro.pos_atual
+                                - ultimo_carro.comprimento
+                                - 0.5);
+                    if raiz <= 0.0 {
+                        return 0.0;
+                    }
+                    let vel_dist = raiz.sqrt();
+                    if vel_dist < veiculos::VELOCIDADE_CRUZEIRO {
+                        return vel_dist;
                     } else {
-                        veiculos::VELOCIDADE_CRUZEIRO // Considera via livre
+                        return veiculos::VELOCIDADE_CRUZEIRO;
                     }
                 }
             }
@@ -205,7 +234,8 @@ impl Transito {
         // https://doc.rust-lang.org/std/collections/struct.VecDeque.html#
         if self.carros_via_h.len() > 0 {
             let mais_antigo_h = self.carros_via_h.get(0).unwrap();
-            if mais_antigo_h.pos_atual > mais_antigo_h.comprimento + VIAV_LARGURA {
+            if mais_antigo_h.pos_atual > mais_antigo_h.comprimento + VIAV_LARGURA + VIAH_MARGEM {
+                // !!!
                 println!("@{} saiu da via H", mais_antigo_h.placa);
                 self.carros_via_h.remove(0);
             }
@@ -216,7 +246,8 @@ impl Transito {
         // https://doc.rust-lang.org/std/collections/struct.VecDeque.html#
         if self.carros_via_v.len() > 0 {
             let mais_antigo_v = self.carros_via_v.get(0).unwrap();
-            if mais_antigo_v.pos_atual > mais_antigo_v.comprimento + VIAH_LARGURA {
+            if mais_antigo_v.pos_atual > mais_antigo_v.comprimento + VIAH_LARGURA + VIAV_MARGEM {
+                // !!!
                 println!("@{} saiu da via V", mais_antigo_v.placa);
                 self.carros_via_v.remove(0);
             }

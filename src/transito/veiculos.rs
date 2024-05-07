@@ -129,7 +129,7 @@ impl Carro {
                 Some(msg) => {
                     match msg {
                         MensagemDoControlador::SetAcel { placa, acel } => {
-                            println!("#veiculo @{} recebe acel {}", placa, acel);
+                            println!("#veiculo @{} recebe acel {:.2}", placa, acel);
                             // Veículo só aceita aceleração válida !!!
                             if acel > self.acel_max {
                                 self.acel_atual = self.acel_max;

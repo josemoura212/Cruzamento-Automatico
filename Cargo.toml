@@ -7,5 +7,5 @@ authors = ["José Augusto Soares de Moura <josemoura212@gmail.com>"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-device_query = "2.0.0"
 rand = "0.8.5"
+speedy2d = "2.1.0"
