@@ -9,7 +9,7 @@ pub const CARRO_COMPRIMENTO: f64 = 4.0; //metros
 pub const VELOCIDADE_CRUZEIRO: f64 = 80.0 * (1000.0 / 3600.0);
 
 // Velocidade máxima de qualquer veículo em metros por segundo
-pub const VELOCIDADE_MAXIMA: f64 = 200.0 * (1000.0 / 3600.0);
+pub const VELOCIDADE_MAXIMA: f64 = 400.0 * (1000.0 / 3600.0);
 
 // Aceleração máxima de qualquer veículo em metros por segundo ao quadrado
 pub const ACELERACAO_MAXIMA: f64 = 3.0;

@@ -34,7 +34,7 @@ use faz_nada::FazNada;
 mod semaforo;
 use semaforo::Semaforo;
 
-const TEMPO_ENTRE_CONTROLES: f64 = 500.0; // Tempo entre ações de controle, em ms
+const TEMPO_ENTRE_CONTROLES: f64 = 50.0; // Tempo entre ações de controle, em ms
 
 // Descreve funções exigidas de um Controlador implementado como submódulo
 pub trait Controlador {

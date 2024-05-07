@@ -56,7 +56,7 @@ use comunicacao::Comunicacao;
 
 */
 
-const TICKMS: f64 = 50.0; // Passo da simulação, em ms
+const TICKMS: f64 = 5.0; // Passo da simulação, em ms
 
 // Struct necessária para a biblioteca gráfica
 struct MyWindowHandler {
