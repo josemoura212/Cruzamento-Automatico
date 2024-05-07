@@ -21,8 +21,6 @@ pub struct Semaforo {
 }
 
 impl Controlador for Semaforo {
-    // !!! Implementação do trait
-
     // Cria um novo semáforo
     fn new(display_tudo: bool) -> Self {
         Self {

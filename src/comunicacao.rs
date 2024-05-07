@@ -48,17 +48,17 @@ pub enum MensagemDoControlador {
     PedeSituacao { placa: String },       // Pede a situação
 }
 
-/*
-    Controlador pode mandar várias mensagens para o mesmo carro
-    Comunicação precisa de vet para enfileirar as mensagens para um mesmo carro
-    Preciso de um hashmap de vets de MensagemDoControlador
-*/
-
 // Sistema de comunicação entre veículos e controlador
 pub struct Comunicacao {
     mensagens_de_veiculo: Vec<MensagemDeVeiculo>,
     mensagens_do_controlador: HashMap<String, VecDeque<MensagemDoControlador>>,
 }
+
+/*
+    Controlador pode mandar várias mensagens para o mesmo carro
+    Comunicação precisa de vet para enfileirar as mensagens para um mesmo carro
+    Preciso de um hashmap de vets de MensagemDoControlador
+*/
 
 impl Comunicacao {
     // Cria um novo sistema de comunicação
@@ -75,8 +75,12 @@ impl Comunicacao {
     }
 
     // Permite o controlador enviar mensagens
+    #[allow(clippy::unwrap_or_default)]
     pub fn send_por_controlador(&mut self, placa: String, msg: MensagemDoControlador) {
-        let lista = self.mensagens_do_controlador.entry(placa).or_default();
+        let lista = self
+            .mensagens_do_controlador
+            .entry(placa)
+            .or_insert(VecDeque::new());
         lista.push_back(msg);
     }
 

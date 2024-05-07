@@ -28,16 +28,14 @@ use veiculos::Carro;
 const _VIAH_MARGEM: f64 = 15.0; //metros
 const _VIAV_MARGEM: f64 = 15.0; //metros
 
-const VIAH_LARGURA: f64 = 4.0; //metros
-const VIAV_LARGURA: f64 = 4.0; //metros
+pub const VIAH_LARGURA: f64 = 4.0; //metros
+pub const VIAV_LARGURA: f64 = 4.0; //metros
 
 const VIAH_PERIMETRO: f64 = 150.0; //metros
 const VIAV_PERIMETRO: f64 = 150.0; //metros
 
 // Cruzamento entre duas vias
-// 'enum' tem semântica 'move', mas 'Via' é barato para fazer copy	!!!
-// Copy requer Clone
-// PartialEq para fazer '=='
+// 'enum' tem semântica 'move', mas 'Via' é barato para fazer copy
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Via {
     ViaH,
@@ -165,11 +163,11 @@ impl Transito {
         nova_placa.push_str(&format!("{:04}", self.carros_criados));
         self.carros_criados += 1;
 
-        let novo_carro = Carro::new(nova_placa.clone(), via, 0.0); // 'via' não precisa clone()	!!!
+        let novo_carro = Carro::new(nova_placa.clone(), via, 0.0);
 
         comunicacao.send_por_veiculo(MensagemDeVeiculo::Chegada {
             placa: nova_placa,
-            via, // 'via' não precisa clone()	!!!
+            via,
             acel_max: novo_carro.acel_max,
             acel_min: novo_carro.acel_min,
             vel_max: novo_carro.vel_max,
@@ -177,7 +175,6 @@ impl Transito {
         });
 
         match via {
-            // 'via' não precisa clone()	!!!
             Via::ViaH => {
                 self.carros_via_h.push(novo_carro);
             }

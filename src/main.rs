@@ -1,6 +1,8 @@
 use std::thread::sleep;
 use std::time::Duration;
 
+use rand::Rng; // Este não é da biblioteca padrão, requer [dependencies] rand = "0.8.5"
+
 mod comunicacao;
 mod controlador;
 mod transito;
@@ -34,10 +36,17 @@ use comunicacao::Comunicacao;
 
 */
 
+const TEMPO_MIN_ENTRE_CHEGADAS: f64 = 3000.0; // Tempo mínimo entre chegadas de carros, em ms
+const TEMPO_MAX_ENTRE_CHEGADAS: f64 = 5000.0; // Tempo máximo entre chegadas de carros, em ms
+
+// Sorteia tempo até a chegada do próximo veículo, distribuição uniforme
+fn tempo_entre_chegadas() -> f64 {
+    rand::thread_rng().gen_range(TEMPO_MIN_ENTRE_CHEGADAS..=TEMPO_MAX_ENTRE_CHEGADAS)
+}
+
 // Simula transito até os carros saírem do perímetro ou colidirem
 fn simula_mundo() {
     const TICKMS: f64 = 100.0; // Passo da simulação, em ms
-    const TEMPO_ENTRE_CHEGADAS: f64 = 3000.0; // Tempo entre chegadas de carros, em ms
     const TEMPO_ENTRE_CONTROLES: f64 = 1000.0; // Tempo entre ações de controle, em ms
 
     // Cria um sistema de comunicação
@@ -59,9 +68,9 @@ fn simula_mundo() {
     };
 
     // Tempo até a próxima chegada de um carro
-    let mut tempo_ateh_proxima_chegada = TEMPO_ENTRE_CHEGADAS;
+    let mut tempo_ateh_proxima_chegada = tempo_entre_chegadas();
 
-    // Cria uma estrutura de controle	!!!
+    // Cria uma estrutura de controle
     let mut controle = Controle::new(TipoControlador::Semaforo);
     //	let mut controle = Controle::new(TipoControlador::FAZNADA);
 
@@ -106,7 +115,7 @@ fn simula_mundo() {
                 Err(msg) => println!("Falha em chegar um carro via V: {}", msg),
             }
 
-            tempo_ateh_proxima_chegada += TEMPO_ENTRE_CHEGADAS;
+            tempo_ateh_proxima_chegada += tempo_entre_chegadas(); // !!!
         }
 
         // Verifica se está na hora de chamar o controlador

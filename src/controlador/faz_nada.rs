@@ -8,8 +8,6 @@ pub struct FazNada {
 }
 
 impl Controlador for FazNada {
-    // !!! Implementação do trait
-
     // Cria um novo faz nada
     fn new(display_tudo: bool) -> Self {
         Self { display_tudo }
@@ -44,8 +42,8 @@ impl Controlador for FazNada {
             println!("key: {}    val: {:?}", key, val);
         }
         ordem_duas_vias.sort_unstable_by(|a, b| b.pos_atual.partial_cmp(&a.pos_atual).unwrap());
+        // Ações para veículos nas duas vias
         for mini in ordem_duas_vias {
-            // Ações para veículos nas duas vias
             let veiculo = situacao.get_mut(&mini.placa).unwrap(); // Sei que a placa existe
             veiculo.acel_desejada = 0.0;
         }

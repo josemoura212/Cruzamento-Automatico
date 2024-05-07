@@ -26,10 +26,10 @@ use crate::comunicacao::{Comunicacao, MensagemDeVeiculo, MensagemDoControlador};
 
 use crate::transito::Via;
 
-mod faz_nada; // !!!
+mod faz_nada;
 use faz_nada::FazNada;
 
-mod semaforo; // !!!
+mod semaforo;
 use semaforo::Semaforo;
 
 // Descreve funções exigidas de um Controlador implementado como submódulo
@@ -51,7 +51,7 @@ pub enum TipoControlador {
 // Usado neste módulo para armazenar o controlador usado
 enum MeuControlador {
     Semaforo(Semaforo),
-    FazNada(FazNada),
+    Faznada(FazNada),
 }
 
 // Descreve a situação de um veículo em particular
@@ -83,7 +83,7 @@ impl Controle {
             situacao: HashMap::new(),
             controlador: match tipo {
                 TipoControlador::Semaforo => MeuControlador::Semaforo(Semaforo::new(true)),
-                TipoControlador::FazNada => MeuControlador::FazNada(FazNada::new(true)),
+                TipoControlador::FazNada => MeuControlador::Faznada(FazNada::new(true)),
             },
             display_tudo: true,
         }
@@ -147,7 +147,7 @@ impl Controle {
 
         match &mut self.controlador {
             MeuControlador::Semaforo(ss) => ss.estrategia(tempo_decorrido, &mut self.situacao),
-            MeuControlador::FazNada(nn) => nn.estrategia(tempo_decorrido, &mut self.situacao),
+            MeuControlador::Faznada(nn) => nn.estrategia(tempo_decorrido, &mut self.situacao),
         }
 
         // Envia novas acelerações para os veículos
